@@ -111,9 +111,9 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     if (playing && showAvailableMovesCheckbox.getState()) {
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-          Board copy = new Board(board);
-          if (copy.addMove(i, j, currentPlayer)) {
+          if (board.addMove(i, j, currentPlayer)) {
             g2.drawRect(40 + i * 70, 40 + j * 70, 70, 70);
+			board.undoMove();
           }
         }
       }
@@ -258,12 +258,8 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       currentPlayer = (int)(2 * Math.random()) + 1;
       if (currentPlayer == player1) {
         JOptionPane.showMessageDialog(this, "Othello goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
-        player1 = Board.BLACK;
-        player2 = Board.WHITE;
       } else {
         JOptionPane.showMessageDialog(this, "Iago goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
-        player1 = Board.WHITE;
-        player2 = Board.BLACK;
       }
       playing = true;
       showAvailableMovesCheckbox.setEnabled(true);
@@ -348,7 +344,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   }
 
   public static void main(String[] args) {
-    Applet applet = new Othello();
+    /*Applet applet = new Othello();
     applet.init();
     applet.start();
 
@@ -357,11 +353,19 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setLayout(new BorderLayout());
     frame.getContentPane().add(applet, BorderLayout.CENTER);
-    frame.setVisible(true);
+    frame.setVisible(true);*/
+		
+		// ----- AI TESTING -----
+		// change Board and MAX_DEPTH back to non-static after testing
+
+		Board board = new Board();
+		long start = System.currentTimeMillis();
+		Board.Move m = board.bestMove(Board.BLACK, 0);
+		System.out.println("Reached " + Board.MAX_DEPTH + " m in " + (System.currentTimeMillis() - start) + " ms");
   }
 
-  class Board {
-    private Stack<int[][]> boards;
+  static class Board {
+    Stack<int[][]> boards;
     static final int EMPTY = 0;
     static final int BLACK = 1;
     static final int WHITE = 2;
@@ -374,20 +378,6 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       board[4][3] = WHITE;
       board[4][4] = BLACK;
       boards.push(board);
-    }
-
-    Board(Board b) {
-      boards = new Stack<int[][]>();
-      for (int i = 0; i < b.boards.size(); i++) {
-        int[][] board = b.boards.get(i);
-        int[][] newBoard = new int[8][8];
-        for (int j = 0; j < board.length; j++) {
-          for (int k = 0; k < board.length; k++) {
-            newBoard[j][k] = board[j][k];
-          }
-        }
-        boards.push(newBoard);
-      }
     }
 
     int getSpot(int x, int y) {
@@ -448,10 +438,11 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     }
 
     boolean hasMove(int color) {
-      Board copy = new Board(this);
-      for (int i = 0; i < boards.peek().length; i++) {
-        for (int j = 0; j < boards.peek().length; j++) {
-          if (copy.addMove(i, j, color)) {
+      int[][] board = boards.peek();
+      for (int i = 0; i < board.length; i++) {
+        for (int j = 0; j < board.length; j++) {
+          if (addMove(i, j, color)) {
+						undoMove();
             return true;
           }
         }
@@ -475,6 +466,61 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       }
       return chipCount;
     }
+
+		// AI strategies
+		// minimize opponent mobility = minimize (frontier) disks, but not so much that the game ends too early
+		// place stable discs (eg corners, edges)
+		// board spots evaluation
+		// opening moves
+		// closing moves - most disks, odd parity
+		// learn! play games against itself
+
+		static final int AI = 1;
+		static final int HUMAN = 2;
+		static final int MAX_SCORE = 100;
+		static final int MIN_SCORE = -100;
+		static final int MAX_DEPTH = 6; // ~2s
+
+		Move bestMove(int player, int depth) { // choose faster wins (make depth a factor)
+			if (depth > MAX_DEPTH) { // heuristic evaluation of board
+				return new Move();
+			}
+			Move best = new Move();
+			best.depth = depth;
+			int other = other(player);
+
+			if (isFull() || !(hasMove(player) || hasMove(other))) { // game is over, return board score
+				best.x = -1;
+				best.y = -1;
+				int aiCount = chipCount(AI);
+				int humanCount = chipCount(HUMAN);
+				if (aiCount > humanCount) {
+					best.score = MAX_SCORE;
+				} else if (aiCount < humanCount) {
+					best.score = MIN_SCORE;
+				} else {
+					best.score = 0;
+				}
+				return best;
+			}
+
+			best.score = player == AI ? MIN_SCORE : MAX_SCORE; // set lower bound
+			for (int i = 0; i < 8; i++) {
+				for (int j = 0; j < 8; j++) {
+					if (addMove(i, j, player)) {
+						Move reply = bestMove(other, depth + 1);
+						undoMove();
+						if ((player == AI && reply.score > best.score) ||
+						    (player == HUMAN && reply.score < best.score)) {
+							best.x = i;
+							best.y = j;
+							best.score = reply.score;
+						}
+					}
+				}
+			}
+			return best;
+		}
 
     public boolean equals(Board b) {
       int[][] board = boards.peek();
@@ -507,5 +553,22 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       }
       return s;
     }
+
+		class Move {
+			int x, y;
+			double score;
+			int depth;
+
+			Move(int x, int y, int score, int depth) {
+				this.x = x;
+				this.y = y;
+				this.score = score;
+				this.depth = depth;
+			}
+
+			Move() {
+				this(-1, -1, 0, 0);
+			}
+		}
   }
 }
