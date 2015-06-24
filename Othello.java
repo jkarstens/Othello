@@ -111,9 +111,9 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     if (playing && showAvailableMovesCheckbox.getState()) {
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-          Board copy = new Board(board);
-          if (copy.addMove(i, j, currentPlayer)) {
+          if (board.addMove(i, j, currentPlayer)) {
             g2.drawRect(40 + i * 70, 40 + j * 70, 70, 70);
+            board.undoMove();
           }
         }
       }
@@ -402,7 +402,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       }
     }
 
-    boolean addMove(int x, int y, int color) {
+    private boolean addMove(int x, int y, int color) {
       boolean valid = false;
       int[][] oldBoard = boards.peek();
       int[][] board = new int[8][8];
@@ -507,5 +507,17 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       }
       return s;
     }
+
+    /*
+     * A.I. Strategies
+     * ---------------
+     * maximize mobility = minimize disks early, but not so the game ends early! = mimimize opponent mobility = minimize frontier disks
+     * minimize disks early in the game?
+     * corners squares = good, corner-adjacent sqaures = bad - static evaluation (used for a tie, not first)
+     * play against itself - learn!
+     * 1. minimize frontier + opponent mobility early on - when to stop?
+     * 2. minimize total number of disks (not too much though)
+     *
+     */
   }
 }
