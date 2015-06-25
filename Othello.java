@@ -13,7 +13,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 
   private Board board;
   private int currentPlayer;
-  private int player1, player2;
+  private int player1, player2, aiPlayer;
   private boolean playing;
   private Image player1Image, player2Image;
   private boolean player1Won, player2Won, nooneWon;
@@ -52,6 +52,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     playerChoices[1].select(3);
     player1 = Board.BLACK;
     player2 = Board.WHITE;
+		aiPlayer = 0;
     currentPlayer = player1;
     playing = false;
     setImages();
@@ -91,6 +92,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     setBackground(backgrounds[1]);
   }
 
+	private int aiWait = 0;
   public void paint(Graphics g) {
     Graphics2D g2 = (Graphics2D)g;
     drawStrings(g2);
@@ -113,11 +115,19 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
         for (int j = 0; j < 8; j++) {
           if (board.addMove(i, j, currentPlayer)) {
             g2.drawRect(40 + i * 70, 40 + j * 70, 70, 70);
-			board.undoMove();
+						board.undoMove();
           }
         }
       }
     }
+		if (aiWait > 50) {
+			Board.Move m = board.bestMove(currentPlayer, 0);
+			board.addMove(m.x, m.y, currentPlayer);
+			updateMove();
+			aiWait = currentPlayer == aiPlayer ? 1 : 0;
+		} else if (aiWait > 0) {
+			aiWait++;
+		}
     g2.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
     g2.setColor(Color.WHITE);
     if (player1Won) {
@@ -204,64 +214,62 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   public void mouseReleased(MouseEvent e) {
   }
   public void mouseClicked(MouseEvent e) {
-    if (playing) {
+    if (playing && currentPlayer != aiPlayer) {
       int x = (e.getX() - 40) / 70;
       int y = (e.getY() - 40) / 70;
       if (board.addMove(x, y, currentPlayer)) {
-        if (board.isFull()) {
-          int player1Chips = board.chipCount(player1);
-          int player2Chips = board.chipCount(player2);
-          if (player1Chips < player2Chips) {
-            JOptionPane.showMessageDialog(this, "Congratulations, Iago, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-            player2Won = true;
-          } else if (player1Chips > player2Chips) {
-            JOptionPane.showMessageDialog(this, "Congratulations, Othello, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-            player1Won = true;
-          } else {
-            JOptionPane.showMessageDialog(this, "Tie game!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-            nooneWon = true;
-          }
-          playing = false;
-          showAvailableMovesCheckbox.setEnabled(false);
-          undoMoveButton.setEnabled(false);
-        } else {
-          currentPlayer = board.other(currentPlayer);
-          if (!board.hasMove(currentPlayer)) {
-            currentPlayer = board.other(currentPlayer);
-            if (!board.hasMove(currentPlayer)) {
-              int player1Chips = board.chipCount(player1);
-              int player2Chips = board.chipCount(player2);
-              if (player1Chips < player2Chips) {
-                JOptionPane.showMessageDialog(this, "Congratulations, Iago, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-                player2Won = true;
-              } else if (player1Chips > player2Chips) {
-                JOptionPane.showMessageDialog(this, "Congratulations, Othello, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-                player1Won = true;
-              } else {
-                JOptionPane.showMessageDialog(this, "Tie game!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
-                nooneWon = true;
-              }
-              playing = false;
-              showAvailableMovesCheckbox.setEnabled(false);
-              undoMoveButton.setEnabled(false);
-            }
-          }
-        }
+				updateMove();
+				if (currentPlayer == aiPlayer) {
+					aiWait = 1;
+				}
       }
     }
   }
+
+	private void updateMove() {
+    currentPlayer = board.other(currentPlayer);
+    if (!board.hasMove(currentPlayer)) {
+      currentPlayer = board.other(currentPlayer);
+      if (!board.hasMove(currentPlayer)) {
+        int player1Chips = board.chipCount(player1);
+        int player2Chips = board.chipCount(player2);
+        if (player1Chips < player2Chips) {
+          JOptionPane.showMessageDialog(this, "Congratulations, Iago, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
+          player2Won = true;
+        } else if (player1Chips > player2Chips) {
+          JOptionPane.showMessageDialog(this, "Congratulations, Othello, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
+          player1Won = true;
+        } else {
+          JOptionPane.showMessageDialog(this, "Tie game!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
+          nooneWon = true;
+        }
+        playing = false;
+        showAvailableMovesCheckbox.setEnabled(false);
+        undoMoveButton.setEnabled(false);
+			}
+		}
+	}
 
   public void actionPerformed(ActionEvent e) {
     Object source = e.getSource();
     if (source == newGameButton) {
       board = new Board();
-      currentPlayer = (int)(2 * Math.random()) + 1;
+			String[] gameModes = new String[] {"Try to beat the computer", "Play against another human"};
+			String gameMode = (String)JOptionPane.showInputDialog(this, "Select a game mode", "Game Mode", JOptionPane.QUESTION_MESSAGE, null, gameModes, gameModes[0]);
+			if (gameMode.equals(gameModes[0])) {
+				currentPlayer = Board.BLACK;
+				aiPlayer = Board.WHITE;
+			} else {
+				currentPlayer = (int)(2 * Math.random()) + 1;
+				aiPlayer = 0;
+			}
       if (currentPlayer == player1) {
         JOptionPane.showMessageDialog(this, "Othello goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
       } else {
         JOptionPane.showMessageDialog(this, "Iago goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
       }
       playing = true;
+			aiWait = 0;
       showAvailableMovesCheckbox.setEnabled(true);
       undoMoveButton.setEnabled(true);
       player1Won = false;
@@ -270,6 +278,10 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     } else if (source == undoMoveButton && playing) {
       if (board.undoMove()) {
         currentPlayer = board.other(currentPlayer);
+				if (currentPlayer == aiPlayer) {
+					board.undoMove();
+					currentPlayer = board.other(currentPlayer);
+				}
       }
     }
   }
@@ -344,7 +356,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   }
 
   public static void main(String[] args) {
-    /*Applet applet = new Othello();
+    Applet applet = new Othello();
     applet.init();
     applet.start();
 
@@ -353,18 +365,18 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setLayout(new BorderLayout());
     frame.getContentPane().add(applet, BorderLayout.CENTER);
-    frame.setVisible(true);*/
+    frame.setVisible(true);
 		
 		// ----- AI TESTING -----
 		// change Board and MAX_DEPTH back to non-static after testing
 
-		Board board = new Board();
+		/*Board board = new Board();
 		long start = System.currentTimeMillis();
 		Board.Move m = board.bestMove(Board.BLACK, 0);
-		System.out.println("Reached " + Board.MAX_DEPTH + " m in " + (System.currentTimeMillis() - start) + " ms");
+		System.out.println("Reached " + Board.MAX_DEPTH + " m in " + (System.currentTimeMillis() - start) + " ms");*/
   }
 
-  static class Board {
+  class Board {
     Stack<int[][]> boards;
     static final int EMPTY = 0;
     static final int BLACK = 1;
@@ -450,10 +462,6 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       return false;
     }
 
-    boolean isFull() {
-      return boards.size() == 61;
-    }
-
     int chipCount(int color) {
       int chipCount = 0;
       int[][] board = boards.peek();
@@ -475,21 +483,18 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 		// closing moves - most disks, odd parity
 		// learn! play games against itself
 
-		static final int AI = 1;
-		static final int HUMAN = 2;
+		static final int HUMAN = 1;
+		static final int AI = 2;
 		static final int MAX_SCORE = 100;
 		static final int MIN_SCORE = -100;
-		static final int MAX_DEPTH = 6; // ~2s
+		static final int MAX_DEPTH = 4; // 7 -> ~2s?
 
 		Move bestMove(int player, int depth) { // choose faster wins (make depth a factor)
-			if (depth > MAX_DEPTH) { // heuristic evaluation of board
-				return new Move();
-			}
 			Move best = new Move();
 			best.depth = depth;
 			int other = other(player);
 
-			if (isFull() || !(hasMove(player) || hasMove(other))) { // game is over, return board score
+			if (!(hasMove(player) || hasMove(other))) { // game is over, return board score
 				best.x = -1;
 				best.y = -1;
 				int aiCount = chipCount(AI);
@@ -508,6 +513,10 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 			for (int i = 0; i < 8; i++) {
 				for (int j = 0; j < 8; j++) {
 					if (addMove(i, j, player)) {
+						if (depth > MAX_DEPTH) { // too deep - perform heuristic evaluation of board and return early
+							undoMove();
+							return new Move(i, j, 0, depth);
+						}
 						Move reply = bestMove(other, depth + 1);
 						undoMove();
 						if ((player == AI && reply.score > best.score) ||
