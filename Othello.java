@@ -1,6 +1,7 @@
 import java.applet.Applet;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 import java.util.Stack;
 import java.awt.event.*;
 import java.awt.*;
@@ -10,6 +11,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   private Graphics dbGraphics;
   private Image dbImage;
   private int WIDTH, HEIGHT;
+  private double SCALE; // originally developed on ~100 ppi. looks way too small on 196 ppi.
 
   private Board board;
   private int currentPlayer;
@@ -22,19 +24,28 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   private Image[] images;
   private Button newGameButton, undoMoveButton;
   private Checkbox showAvailableMovesCheckbox;
-  private Choice backgroundChoice;
-  private Color[] backgrounds;
 
   public void init() {
-    WIDTH = 900;
-    HEIGHT = 700;
+    SCALE = Toolkit.getDefaultToolkit().getScreenResolution() / 100.0;
+    WIDTH = (int)(900 * SCALE);
+    HEIGHT = (int)(700 * SCALE);
     setSize(WIDTH, HEIGHT);
+    setBackground(new Color(230, 255, 230));
+    UIManager.put("OptionPane.buttonFont", new Font("System", Font.PLAIN, (int)(12 * SCALE)));
+    UIManager.put("OptionPane.messageFont", new Font("System", Font.BOLD, (int)(20 * SCALE)));
+    UIManager.put("ComboBox.font", new Font("System", Font.PLAIN, (int)(20 * SCALE)));
+    try {
+      UIManager.setLookAndFeel(UIManager.getInstalledLookAndFeels()[3].getClassName());
+    } catch (Exception e) {
+    }
+
     addMouseListener(this);
     board = new Board();
     playerChoices = new Choice[2];
     Color playerChoiceColor = new Color(176, 196, 222);
     for (int i = 0; i < playerChoices.length; i++) {
       playerChoices[i] = new Choice();
+      playerChoices[i].setFont(new Font("Times New Roman", Font.BOLD, (int)(12 * SCALE)));
       playerChoices[i].add("Black");
       playerChoices[i].add("Gray");
       playerChoices[i].add("Blue");
@@ -58,38 +69,19 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     setImages();
     newGameButton = new Button("New Game");
     newGameButton.setBackground(new Color(86, 150, 150));
-    newGameButton.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
+    newGameButton.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(20 * SCALE)));
     newGameButton.addActionListener(this);
     add(newGameButton);
     undoMoveButton = new Button("Undo Move");
     undoMoveButton.setBackground(new Color(225, 190, 225));
-    undoMoveButton.setFont(new Font("Comic Sans MS", Font.BOLD, 16));
+    undoMoveButton.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(16 * SCALE)));
     undoMoveButton.setEnabled(false);
     undoMoveButton.addActionListener(this);
     add(undoMoveButton);
     showAvailableMovesCheckbox = new Checkbox("Show Available Moves");
-    showAvailableMovesCheckbox.setFont(new Font("Comic Sans MS", Font.PLAIN, 12));
+    showAvailableMovesCheckbox.setFont(new Font("Comic Sans MS", Font.PLAIN, (int)(12 * SCALE)));
     add(showAvailableMovesCheckbox);
     showAvailableMovesCheckbox.setEnabled(false);
-    backgroundChoice = new Choice();
-    backgroundChoice.add("White");
-    backgroundChoice.add("Cyan");
-    backgroundChoice.add("Light Blue");
-    backgroundChoice.add("Green");
-    backgroundChoice.add("Purple");
-    backgroundChoice.add("Khaki");
-    backgroundChoice.addItemListener(this);
-    add(backgroundChoice);
-    backgroundChoice.select(1);
-    backgrounds = new Color[6];
-    backgrounds[0] = Color.WHITE;
-    backgrounds[1] = new Color(230, 255, 230);
-    backgrounds[2] = new Color(173, 216, 230);
-    backgrounds[3] = new Color(164, 255, 164);
-    backgrounds[4] = new Color(236, 211, 236);
-    backgrounds[5] = new Color(255, 244, 164);
-    backgroundChoice.setBackground(backgrounds[1]);
-    setBackground(backgrounds[1]);
   }
 
 	private int aiWait = 0;
@@ -97,24 +89,23 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     Graphics2D g2 = (Graphics2D)g;
     drawStrings(g2);
     drawPieces(g2);
-    playerChoices[0].setBounds(620, 210, 119, 10);
-    playerChoices[1].setBounds(750, 210, 119, 10);
-    showAvailableMovesCheckbox.setBounds(620, 290, 150, 30);
-    newGameButton.setBounds(660, 375, 160, 60);
-    undoMoveButton.setBounds(660, 328, 160, 40);
-    backgroundChoice.setBounds(765, 450, 80, 10);
-    g2.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 10.0f));
+    playerChoices[0].setBounds((int)(620 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(10 * SCALE));
+    playerChoices[1].setBounds((int)(750 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(10 * SCALE));
+    showAvailableMovesCheckbox.setBounds((int)(620 * SCALE), (int)(290 * SCALE), (int)(150 * SCALE), (int)(30 * SCALE));
+    newGameButton.setBounds((int)(660 * SCALE), (int)(375 * SCALE), (int)(160 * SCALE), (int)(60 * SCALE));
+    undoMoveButton.setBounds((int)(660 * SCALE), (int)(328 * SCALE), (int)(160 * SCALE), (int)(40 * SCALE));
+    g2.setStroke(new BasicStroke((float)(3.5 * SCALE), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, (float)(10.0 * SCALE)));
     g2.setColor(new Color(120, 145, 120));
     for (int i = 40; i < 670; i += 70) {
-      g2.drawLine(40, i, 600, i);
-      g2.drawLine(i, 40, i, 600);
+      g2.drawLine((int)(40 * SCALE), (int)(i * SCALE), (int)(600 * SCALE), (int)(i * SCALE));
+      g2.drawLine((int)(i * SCALE), (int)(40 * SCALE), (int)(i * SCALE), (int)(600 * SCALE));
     }
     g2.setColor(new Color(176, 255, 48));
     if (playing && showAvailableMovesCheckbox.getState()) {
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
           if (board.addMove(i, j, currentPlayer)) {
-            g2.drawRect(40 + i * 70, 40 + j * 70, 70, 70);
+            g2.drawRect((int)((40 + i * 70) * SCALE), (int)((40 + j * 70) * SCALE), (int)(70 * SCALE), (int)(70 * SCALE));
 						board.undoMove();
           }
         }
@@ -128,17 +119,17 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 		} else if (aiWait > 0) {
 			aiWait++;
 		}
-    g2.setFont(new Font("Comic Sans MS", Font.BOLD, 20));
+    g2.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(20 * SCALE)));
     g2.setColor(Color.WHITE);
     if (player1Won) {
-      g2.drawImage(player1Win, 640, 475, this);
-      g2.drawString("Congrats Othello!", 660, 500);
+      g2.drawImage(player1Win, (int)(640 * SCALE), (int)(475 * SCALE), this);
+      g2.drawString("Congrats Othello!", (int)(660 * SCALE), (int)(500 * SCALE));
     } else if (player2Won) {
-      g2.drawImage(player2Win, 640, 475, this);
-      g2.drawString("Congrats Iago!", 660, 600);
+      g2.drawImage(player2Win, (int)(640 * SCALE), (int)(475 * SCALE), this);
+      g2.drawString("Congrats Iago!", (int)(660 * SCALE), (int)(600 * SCALE));
     } else if (nooneWon) {
-      g2.drawImage(nooneWin, 640, 475, this);
-      g2.drawString("Tie Game!", 690, 590);
+      g2.drawImage(nooneWin, (int)(640 * SCALE), (int)(475 * SCALE), this);
+      g2.drawString("Tie Game!", (int)(690 * SCALE), (int)(590 * SCALE));
     }
   }
 
@@ -153,29 +144,29 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
         default: oval = false;
       }
       if (oval) {
-        g2.fillOval(650 + 120 * i, 120, 70, 70);
+        g2.fillOval((int)((650 + 120 * i)* SCALE), (int)(120 * SCALE), (int)(70 * SCALE), (int)(70 * SCALE));
         for (int j = 0; j < 8; j++) {
           for (int k = 0; k < 8; k++) {
             if ((i == 0 && board.getSpot(j , k) == player1) || (i == 1 && board.getSpot(j, k) == player2)) {
-              g2.fillOval(j * 70 + 44, k * 70 + 44, 62, 62);
+              g2.fillOval((int)((j * 70 + 44) * SCALE), (int)((k * 70 + 44) * SCALE), (int)(62 * SCALE), (int)(62 * SCALE));
             }
           }
         }
         if (playing && (i == 0 && currentPlayer == player1) || (i == 1 && currentPlayer == player2)) {
-          g2.fillOval(770, 235, 70, 70);
+          g2.fillOval((int)(770 * SCALE), (int)(235 * SCALE), (int)(70 * SCALE), (int)(70 * SCALE));
         }
       } else {
         Image piece = i == 0 ? player1Image : player2Image;
-        g2.drawImage(piece, 650 + 120 * i, 120, this);
+        g2.drawImage(piece, (int)((650 + 120 * i) * SCALE), (int)(120 * SCALE), this);
         for (int j = 0; j < 8; j++) {
           for (int k = 0; k < 8; k++) {
             if ((i == 0 && board.getSpot(j, k) == player1) || (i == 1 && board.getSpot(j, k) == player2)) {
-              g2.drawImage(piece, j * 70 + 44, k * 70 + 44, this);
+              g2.drawImage(piece, (int)((j * 70 + 44) * SCALE), (int)((k * 70 + 44) * SCALE), this);
             }
           }
         }
         if (playing && (i == 0 && currentPlayer == player1) || (i == 1 && currentPlayer == player2)) {
-          g2.drawImage(piece, 770, 240, this);
+          g2.drawImage(piece, (int)(770 * SCALE), (int)(240 * SCALE), this);
         }
       }
     }
@@ -183,14 +174,13 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 
   public void drawStrings(Graphics2D g2) {
     g2.setColor(Color.BLACK);
-    g2.setFont(new Font("Comic Sans MS", Font.BOLD, 35));
-    g2.drawString("OTHELLO", 660, 60);
-    g2.setFont(new Font("Comic Sans MS", Font.ITALIC, 26));
-    g2.drawString("Othello", 645, 105);
-    g2.drawString("Iago", 765, 105);
-    g2.setFont(new Font("Comic Sans MS", Font.PLAIN, 20));
-    g2.drawString("Current Player:", 620, 280);
-    g2.drawString("Background:", 635, 467);
+    g2.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(35 * SCALE)));
+    g2.drawString("OTHELLO", (int)(660 * SCALE), (int)(60 * SCALE));
+    g2.setFont(new Font("Comic Sans MS", Font.ITALIC, (int)(26 * SCALE)));
+    g2.drawString("Othello", (int)(645 * SCALE), (int)(105 * SCALE));
+    g2.drawString("Iago", (int)(765 * SCALE), (int)(105 * SCALE));
+    g2.setFont(new Font("Comic Sans MS", Font.PLAIN, (int)(20 * SCALE)));
+    g2.drawString("Current Player:", (int)(620 * SCALE), (int)(280 * SCALE));
   }
 
 	private void updateMove() {
@@ -241,8 +231,8 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   }
   public void mouseClicked(MouseEvent e) {
     if (playing && currentPlayer != aiPlayer) {
-      int x = (e.getX() - 40) / 70;
-      int y = (e.getY() - 40) / 70;
+      int x = (e.getX() - (int)(40 * SCALE)) / (int)(70 * SCALE);
+      int y = (e.getY() - (int)(40 * SCALE)) / (int)(70 * SCALE);
       if (board.addMove(x, y, currentPlayer)) {
 				updateMove();
 				if (currentPlayer == aiPlayer) {
@@ -257,33 +247,30 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     if (source == newGameButton) {
       board = new Board();
 			String[] gameModes = new String[] {"Try to beat the computer", "Play against another human"};
-			String gameMode = (String)JOptionPane.showInputDialog(this, "Select a game mode", "Game Mode", JOptionPane.QUESTION_MESSAGE, null, gameModes, gameModes[0]);
-			if (gameMode.equals(gameModes[0])) {
-				currentPlayer = Board.BLACK;
-				aiPlayer = Board.WHITE;
-			} else {
-				currentPlayer = (int)(2 * Math.random()) + 1;
-				aiPlayer = 0;
-			}
-      if (currentPlayer == player1) {
-        JOptionPane.showMessageDialog(this, "Othello goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
-      } else {
-        JOptionPane.showMessageDialog(this, "Iago goes first!", "Random Choice", JOptionPane.INFORMATION_MESSAGE);
-      }
-      playing = true;
-			aiWait = 0;
-      showAvailableMovesCheckbox.setEnabled(true);
-      undoMoveButton.setEnabled(true);
-      player1Won = false;
-      player2Won = false;
-      nooneWon = false;
-    } else if (source == undoMoveButton && playing) {
-      if (board.undoMove()) {
-        currentPlayer = board.other(currentPlayer);
-				if (currentPlayer == aiPlayer) {
-					board.undoMove();
-					currentPlayer = board.other(currentPlayer);
-				}
+			String gameMode = (String)JOptionPane.showInputDialog(this, "", "Game Mode", -1, null, gameModes, gameModes[0]);
+      if (gameMode != null) {
+        if (gameMode.equals(gameModes[0])) {
+  				currentPlayer = Board.BLACK;
+  				aiPlayer = Board.WHITE;
+  			} else {
+  				currentPlayer = (int)(2 * Math.random()) + 1;
+  				aiPlayer = 0;
+  			}
+        playing = true;
+  			aiWait = 0;
+        showAvailableMovesCheckbox.setEnabled(true);
+        undoMoveButton.setEnabled(true);
+        player1Won = false;
+        player2Won = false;
+        nooneWon = false;
+      } else if (source == undoMoveButton && playing) {
+        if (board.undoMove()) {
+          currentPlayer = board.other(currentPlayer);
+  				if (currentPlayer == aiPlayer) {
+  					board.undoMove();
+  					currentPlayer = board.other(currentPlayer);
+  				}
+        }
       }
     }
   }
@@ -317,22 +304,17 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       } else {
         player2Image = null;
       }
-    } else if (source == backgroundChoice) {
-      Color c = backgrounds[backgroundChoice.getSelectedIndex()];
-      backgroundChoice.setBackground(c);
-      showAvailableMovesCheckbox.setBackground(c);
-      setBackground(c);
     }
   }
 
   public void setImages() {
     Toolkit tk = Toolkit.getDefaultToolkit();
     images = new Image[5];
-    images[0] = tk.createImage("images/acai.png");
-    images[1] = tk.createImage("images/apple.png");
-    images[2] = tk.createImage("images/banana.png");
-    images[3] = tk.createImage("images/pineapple.png");
-    images[4] = tk.createImage("images/strawberry.png");
+    images[0] = tk.createImage("images/acai.png").getScaledInstance((int)(60 * SCALE), (int)(60 * SCALE), Image.SCALE_SMOOTH);
+    images[1] = tk.createImage("images/apple.png").getScaledInstance((int)(60 * SCALE), (int)(60 * SCALE), Image.SCALE_SMOOTH);
+    images[2] = tk.createImage("images/banana.png").getScaledInstance((int)(60 * SCALE), (int)(60 * SCALE), Image.SCALE_SMOOTH);
+    images[3] = tk.createImage("images/pineapple.png").getScaledInstance((int)(60 * SCALE), (int)(60 * SCALE), Image.SCALE_SMOOTH);
+    images[4] = tk.createImage("images/strawberry.png").getScaledInstance((int)(60 * SCALE), (int)(60 * SCALE), Image.SCALE_SMOOTH);
   }
 
   public void start() {
@@ -368,7 +350,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     frame.setLayout(new BorderLayout());
     frame.getContentPane().add(applet, BorderLayout.CENTER);
     frame.setVisible(true);
-		
+
 		// ----- AI TESTING -----
 		// change Board and MAX_DEPTH back to non-static after testing
 
@@ -498,8 +480,8 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 																	{10, -5, 4, 1, 1, 4, -5, 10},
 																	{-10, -20, -5, -3, -3, -5, -20, -10},
 																	{100, -10, 10, 5, 5, 10, -10, 100} };
-		
-		//static final int[][] STATIC_EVAL = new int[][] 
+
+		//static final int[][] STATIC_EVAL = new int[][]
 
 		Move bestMove(int player, int depth) { // choose faster wins (make depth a factor)
 			Move best = new Move();
