@@ -2,7 +2,6 @@ import java.applet.Applet;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
-import java.util.Stack;
 import java.awt.event.*;
 import java.awt.*;
 
@@ -24,19 +23,24 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
   private Image[] images;
   private Button newGameButton, undoMoveButton;
   private Checkbox showAvailableMovesCheckbox;
+  private String os;
 
   public void init() {
+    os = System.getProperty("os.name");
     SCALE = Toolkit.getDefaultToolkit().getScreenResolution() / 100.0;
     WIDTH = (int)(900 * SCALE);
     HEIGHT = (int)(700 * SCALE);
     setSize(WIDTH, HEIGHT);
     setBackground(new Color(230, 255, 230));
-    UIManager.put("OptionPane.buttonFont", new Font("System", Font.PLAIN, (int)(12 * SCALE)));
-    UIManager.put("OptionPane.messageFont", new Font("System", Font.BOLD, (int)(20 * SCALE)));
-    UIManager.put("ComboBox.font", new Font("System", Font.PLAIN, (int)(20 * SCALE)));
-    try {
-      UIManager.setLookAndFeel(UIManager.getInstalledLookAndFeels()[3].getClassName());
-    } catch (Exception e) {
+
+    if (os.equals("Windows") && SCALE > 1.1) {
+      UIManager.put("OptionPane.buttonFont", new Font("System", Font.PLAIN, (int)(12 * SCALE)));
+      UIManager.put("OptionPane.messageFont", new Font("System", Font.BOLD, (int)(20 * SCALE)));
+      UIManager.put("ComboBox.font", new Font("System", Font.PLAIN, (int)(20 * SCALE)));
+      try {
+        UIManager.setLookAndFeel(UIManager.getInstalledLookAndFeels()[3].getClassName());
+      } catch (Exception e) {
+      }
     }
 
     addMouseListener(this);
@@ -55,12 +59,11 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       playerChoices[i].add("Banana");
       playerChoices[i].add("Pineapple");
       playerChoices[i].add("Strawberry");
-      playerChoices[i].setBackground(playerChoiceColor);
       playerChoices[i].addItemListener(this);
       add(playerChoices[i]);
     }
-    playerChoices[0].select(2);
-    playerChoices[1].select(3);
+    playerChoices[0].select(0);
+    playerChoices[1].select(1);
     player1 = Board.BLACK;
     player2 = Board.WHITE;
 		aiPlayer = Board.WHITE;
@@ -68,12 +71,10 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     playing = false;
     setImages();
     newGameButton = new Button("New Game");
-    newGameButton.setBackground(new Color(86, 150, 150));
     newGameButton.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(20 * SCALE)));
     newGameButton.addActionListener(this);
     add(newGameButton);
     undoMoveButton = new Button("Undo Move");
-    undoMoveButton.setBackground(new Color(225, 190, 225));
     undoMoveButton.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(16 * SCALE)));
     undoMoveButton.setEnabled(false);
     undoMoveButton.addActionListener(this);
@@ -82,6 +83,12 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     showAvailableMovesCheckbox.setFont(new Font("Comic Sans MS", Font.PLAIN, (int)(12 * SCALE)));
     add(showAvailableMovesCheckbox);
     showAvailableMovesCheckbox.setEnabled(false);
+    if (!(os.equals("Mac OS X") || os.equals("Mac"))) {
+      newGameButton.setBackground(new Color(86, 150, 150));
+      undoMoveButton.setBackground(new Color(225, 190, 225));
+      playerChoices[0].setBackground(playerChoiceColor);
+      playerChoices[1].setBackground(playerChoiceColor);
+    }
   }
 
 	private int aiWait = 0;
@@ -89,8 +96,8 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     Graphics2D g2 = (Graphics2D)g;
     drawStrings(g2);
     drawPieces(g2);
-    playerChoices[0].setBounds((int)(620 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(10 * SCALE));
-    playerChoices[1].setBounds((int)(750 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(10 * SCALE));
+    playerChoices[0].setBounds((int)(620 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(20 * SCALE));
+    playerChoices[1].setBounds((int)(750 * SCALE), (int)(210 * SCALE), (int)(119 * SCALE), (int)(20 * SCALE));
     showAvailableMovesCheckbox.setBounds((int)(620 * SCALE), (int)(290 * SCALE), (int)(150 * SCALE), (int)(30 * SCALE));
     newGameButton.setBounds((int)(660 * SCALE), (int)(375 * SCALE), (int)(160 * SCALE), (int)(60 * SCALE));
     undoMoveButton.setBounds((int)(660 * SCALE), (int)(328 * SCALE), (int)(160 * SCALE), (int)(40 * SCALE));
@@ -106,19 +113,19 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
         for (int j = 0; j < 8; j++) {
           if (board.addMove(i, j, currentPlayer)) {
             g2.drawRect((int)((40 + i * 70) * SCALE), (int)((40 + j * 70) * SCALE), (int)(70 * SCALE), (int)(70 * SCALE));
-						board.undoMove();
+            board.undoMove();
           }
         }
       }
     }
-		if (aiWait > 5) {
-			Board.Move m = board.bestMove(currentPlayer, 0);
-			board.addMove(m.x, m.y, currentPlayer);
-			updateMove();
-			aiWait = currentPlayer == aiPlayer && playing ? 1 : 0;
-		} else if (aiWait > 0) {
-			aiWait++;
-		}
+    if (aiWait > 5) {
+        Board.Move m = board.bestMove(currentPlayer, 0);
+        board.addMove(m.x, m.y, currentPlayer);
+        updateMove();
+        aiWait = currentPlayer == aiPlayer && playing ? 1 : 0;
+    } else if (aiWait > 0) {
+        aiWait++;
+    }
     g2.setFont(new Font("Comic Sans MS", Font.BOLD, (int)(20 * SCALE)));
     g2.setColor(Color.WHITE);
     if (player1Won) {
@@ -178,7 +185,7 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     g2.drawString("OTHELLO", (int)(660 * SCALE), (int)(60 * SCALE));
     g2.setFont(new Font("Comic Sans MS", Font.ITALIC, (int)(26 * SCALE)));
     g2.drawString("Othello", (int)(645 * SCALE), (int)(105 * SCALE));
-    g2.drawString("Iago", (int)(765 * SCALE), (int)(105 * SCALE));
+    g2.drawString("Iago", (int)(775 * SCALE), (int)(105 * SCALE));
     g2.setFont(new Font("Comic Sans MS", Font.PLAIN, (int)(20 * SCALE)));
     g2.drawString("Current Player:", (int)(620 * SCALE), (int)(280 * SCALE));
   }
@@ -196,18 +203,18 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
         int player1Chips = board.chipCount(player1);
         int player2Chips = board.chipCount(player2);
         if (player1Chips < player2Chips) {
-				  player2Won = true;
+          player2Won = true;
           JOptionPane.showMessageDialog(this, "Congratulations, Iago, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
         } else if (player1Chips > player2Chips) {
-				  player1Won = true;
+          player1Won = true;
           JOptionPane.showMessageDialog(this, "Congratulations, Othello, you win!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
         } else {
-				  nooneWon = true;
+          nooneWon = true;
           JOptionPane.showMessageDialog(this, "Tie game!", "Good Game!", JOptionPane.INFORMATION_MESSAGE);
         }
-			}
-		}
-	}
+      }
+    }
+}
 
   public void update(Graphics g) {
     if (dbImage == null) {
@@ -234,9 +241,9 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
       int x = (e.getX() - (int)(40 * SCALE)) / (int)(70 * SCALE);
       int y = (e.getY() - (int)(40 * SCALE)) / (int)(70 * SCALE);
       if (board.addMove(x, y, currentPlayer)) {
-				updateMove();
-				if (currentPlayer == aiPlayer) {
-					aiWait = 1;
+        updateMove();
+        if (currentPlayer == aiPlayer) {
+          aiWait = 1;
 				}
       }
     }
@@ -249,13 +256,8 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
 			String[] gameModes = new String[] {"Try to beat the computer", "Play against another human"};
 			String gameMode = (String)JOptionPane.showInputDialog(this, "", "Game Mode", -1, null, gameModes, gameModes[0]);
       if (gameMode != null) {
-        if (gameMode.equals(gameModes[0])) {
-  				currentPlayer = Board.BLACK;
-  				aiPlayer = Board.WHITE;
-  			} else {
-  				currentPlayer = (int)(2 * Math.random()) + 1;
-  				aiPlayer = 0;
-  			}
+        currentPlayer = Board.BLACK;
+        aiPlayer = gameMode.equals(gameModes[0]) ? Board.WHITE : 0;
         playing = true;
   			aiWait = 0;
         showAvailableMovesCheckbox.setEnabled(true);
@@ -263,14 +265,14 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
         player1Won = false;
         player2Won = false;
         nooneWon = false;
-      } else if (source == undoMoveButton && playing) {
-        if (board.undoMove()) {
-          currentPlayer = board.other(currentPlayer);
-  				if (currentPlayer == aiPlayer) {
-  					board.undoMove();
-  					currentPlayer = board.other(currentPlayer);
-  				}
-        }
+      }
+    } else if (source == undoMoveButton && playing) {
+      if (board.undoMove()) {
+        currentPlayer = board.other(currentPlayer);
+  			if (currentPlayer == aiPlayer) {
+  				board.undoMove();
+  				currentPlayer = board.other(currentPlayer);
+  			}
       }
     }
   }
@@ -350,228 +352,5 @@ public class Othello extends Applet implements MouseListener, ActionListener, It
     frame.setLayout(new BorderLayout());
     frame.getContentPane().add(applet, BorderLayout.CENTER);
     frame.setVisible(true);
-
-		// ----- AI TESTING -----
-		// change Board and MAX_DEPTH back to non-static after testing
-
-		/*Board board = new Board();
-		long start = System.currentTimeMillis();
-		Board.Move m = board.bestMove(Board.BLACK, 0);
-		System.out.println("Reached " + Board.MAX_DEPTH + " m in " + (System.currentTimeMillis() - start) + " ms");*/
-  }
-
-  class Board {
-    Stack<int[][]> boards;
-    static final int EMPTY = 0;
-    static final int BLACK = 1;
-    static final int WHITE = 2;
-
-    Board() {
-      boards = new Stack<int[][]>();
-      int[][] board = new int[8][8];
-      board[3][3] = BLACK;
-      board[3][4] = WHITE;
-      board[4][3] = WHITE;
-      board[4][4] = BLACK;
-      boards.push(board);
-    }
-
-    int getSpot(int x, int y) {
-      return boards.peek()[x][y];
-    }
-
-    int other(int color) {
-      switch (color) {
-        case BLACK: return WHITE;
-        case WHITE: return BLACK;
-        default: return EMPTY;
-      }
-    }
-
-    boolean addMove(int x, int y, int color) {
-      boolean valid = false;
-      int[][] oldBoard = boards.peek();
-      int[][] board = new int[8][8];
-      for (int i = 0; i < board.length; i++) {
-        for (int j = 0; j < board.length; j++) {
-          board[i][j] = oldBoard[i][j];
-        }
-      }
-      if (-1 < x && x < board.length && -1 < y && y < board.length && board[x][y] == EMPTY) {
-        int other = other(color);
-        for (int dx = -1; dx < 2; dx++) {
-          for (int dy = -1; dy < 2; dy++) {
-            if ((dx != 0 || dy != 0) && -1 < x + dx && x + dx < board.length && -1 < y + dy && y + dy < board.length && board[x + dx][y + dy] == other) {
-              for (int i = x + dx + dx, j = y + dy + dy; -1 < i && i < board.length && -1 < j && j < board.length; i += dx, j += dy) {
-                if (board[i][j] == EMPTY) {
-                  break;
-                } else if (board[i][j] == color) {
-                  for (int k = i - dx, l = j - dy; k != x || l != y; k -= dx, l -= dy) {
-                    board[k][l] = color;
-                  }
-                  board[x][y] = color;
-                  valid = true;
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-      if (valid) {
-        boards.push(board);
-      }
-      return valid;
-    }
-
-    boolean undoMove() {
-      if (boards.size() > 1) {
-        boards.pop();
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    boolean hasMove(int color) {
-      int[][] board = boards.peek();
-      for (int i = 0; i < board.length; i++) {
-        for (int j = 0; j < board.length; j++) {
-          if (addMove(i, j, color)) {
-						undoMove();
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    int chipCount(int color) {
-      int chipCount = 0;
-      int[][] board = boards.peek();
-      for (int i = 0; i < board.length; i++) {
-        for (int j = 0; j < board.length; j++) {
-          if (board[i][j] == color) {
-            chipCount++;
-          }
-        }
-      }
-      return chipCount;
-    }
-
-		// AI strategies
-		// minimize opponent mobility = minimize (frontier) disks, but not so much that the game ends too early (split game into open, mid, end)
-		// place stable discs (eg corners, edges)
-		// board spots evaluation
-		// opening moves
-		// closing moves - most disks, odd parity
-		// learn! play games against itself
-
-		static final int HUMAN = 1;
-		static final int AI = 2;
-		static final int MAX_SCORE = 100;
-		static final int MIN_SCORE = -100;
-		static final int MAX_DEPTH = 3; // 7 -> ~2s?
-	  final int[][] STATIC_EVAL = { {100, -10, 10, 5, 5, 10, -10, 100},
-																	{-10, -20, -5, -3, -3, -5, -20, -10},
-																	{10, -5, 4, 1, 1, 4, -5, 10},
-																	{5, -3, 1, 0, 0, 1, -3, 5},
-																	{5, -3, 1, 0, 0, 1, -3, 5},
-																	{10, -5, 4, 1, 1, 4, -5, 10},
-																	{-10, -20, -5, -3, -3, -5, -20, -10},
-																	{100, -10, 10, 5, 5, 10, -10, 100} };
-
-		//static final int[][] STATIC_EVAL = new int[][]
-
-		Move bestMove(int player, int depth) { // choose faster wins (make depth a factor)
-			Move best = new Move();
-			best.depth = depth;
-			int other = other(player);
-
-			if (!(hasMove(player) || hasMove(other))) { // game is over, return board score
-				best.x = -1;
-				best.y = -1;
-				int aiCount = chipCount(AI);
-				int humanCount = chipCount(HUMAN);
-				if (aiCount > humanCount) {
-					best.score = MAX_SCORE;
-				} else if (aiCount < humanCount) {
-					best.score = MIN_SCORE;
-				} else {
-					best.score = 0;
-				}
-				return best;
-			}
-
-			best.score = player == AI ? MIN_SCORE : MAX_SCORE; // set lower bound
-			for (int i = 0; i < 8; i++) {
-				for (int j = 0; j < 8; j++) {
-					if (addMove(i, j, player)) {
-						if (depth > MAX_DEPTH) { // too deep - perform heuristic evaluation of board and return early
-							undoMove();
-							return new Move(i, j, STATIC_EVAL[i][j], depth);
-						}
-						Move reply = bestMove(other, depth + 1);
-						undoMove();
-						if ((player == AI && reply.score >= best.score) ||
-						    (player == HUMAN && reply.score <= best.score)) {
-							best.x = i;
-							best.y = j;
-							best.score = reply.score;
-						}
-					}
-				}
-			}
-			return best;
-		}
-
-    public boolean equals(Board b) {
-      int[][] board = boards.peek();
-      try {
-        for (int i = 0; i < board.length; i++) {
-          for (int j = 0; j < board.length; j++) {
-            if (board[i][j] != b.boards.peek()[i][j]) {
-              return false;
-            }
-          }
-        }
-      } catch (ArrayIndexOutOfBoundsException e) {
-        return false;
-      }
-      return true;
-    }
-
-    public String toString() {
-      int[][] board = boards.peek();
-      String s = "";
-      for (int i = 0; i < board.length; i++) {
-        for (int j = 0; j < board.length; j++) {
-          switch (board[j][i]) {
-            case BLACK: s += "B "; break;
-            case WHITE: s += "W "; break;
-            case EMPTY: s += "_ "; break;
-          }
-        }
-        s += "\n";
-      }
-      return s;
-    }
-
-		class Move {
-			int x, y;
-			double score;
-			int depth;
-
-			Move(int x, int y, int score, int depth) {
-				this.x = x;
-				this.y = y;
-				this.score = score;
-				this.depth = depth;
-			}
-
-			Move() {
-				this(-1, -1, 0, 0);
-			}
-		}
   }
 }
